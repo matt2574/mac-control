@@ -1,0 +1,16 @@
+{
+  "name": "mac-control",
+  "version": "1.0.0",
+  "description": "Standalone local mac-control service for tru-tech_os",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "keywords": ["macos", "automation", "local-service"],
+  "author": "Matt Schmidt",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.0"
+  }
+}

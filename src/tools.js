@@ -97,6 +97,69 @@ const tools = [
     example: '{ "tool": "click", "parameters": { "x": 500, "y": 300 } }',
     requiresPermission: "accessibility",
   },
+  {
+    name: "ax_describe_ui",
+    description: "Dump the accessibility tree of a running app as JSON. Works inside Electron webviews (Claude Desktop, VS Code, etc.) where coordinate clicks fail.",
+    category: "accessibility",
+    securityLevel: "standard",
+    parameters: {
+      app: {
+        type: "string",
+        description: "Application name (e.g. 'Claude', 'Safari')",
+        required: true,
+      },
+      depth: {
+        type: "number",
+        description: "Max tree depth (default: 6)",
+        default: 6,
+      },
+      roles: {
+        type: "string",
+        description: "Comma-separated AX role filter (e.g. 'AXButton,AXTextField')",
+      },
+    },
+    returns: "JSON accessibility tree with role, title, description, frame, pressable for each element",
+    example: '{ "tool": "ax_describe_ui", "parameters": { "app": "Claude", "depth": 4 } }',
+    requiresPermission: "accessibility",
+  },
+  {
+    name: "ax_click_element",
+    description: "Click (AXPress) an element in a running app matched by accessibility role/title/description. Works inside Electron webviews where coordinate clicks fail.",
+    category: "accessibility",
+    securityLevel: "elevated",
+    parameters: {
+      app: {
+        type: "string",
+        description: "Application name (e.g. 'Claude')",
+        required: true,
+      },
+      role: {
+        type: "string",
+        description: "AX role to match (e.g. 'AXButton', 'AXTextField')",
+      },
+      title: {
+        type: "string",
+        description: "Title substring to match",
+      },
+      description: {
+        type: "string",
+        description: "Description substring to match",
+      },
+      index: {
+        type: "number",
+        description: "Which match to click if multiple found (0-based, default: 0)",
+        default: 0,
+      },
+      dryRun: {
+        type: "boolean",
+        description: "If true, find the element but don't click it",
+        default: false,
+      },
+    },
+    returns: "Object with matched element info and click result",
+    example: '{ "tool": "ax_click_element", "parameters": { "app": "Claude", "role": "AXButton", "title": "New session" } }',
+    requiresPermission: "accessibility",
+  },
 ];
 
 const categories = {
@@ -125,13 +188,18 @@ const categories = {
     description: "Keyboard and mouse input simulation",
     icon: "⌨️",
   },
+  accessibility: {
+    name: "Accessibility",
+    description: "AX-based UI inspection and interaction (works inside Electron webviews)",
+    icon: "♿",
+  },
 };
 
 // Security presets determine which tools are available
 const securityPresets = {
   safe: ["get_system_info"],
   standard: ["get_system_info", "take_screenshot", "open_url", "focus_app"],
-  full: ["get_system_info", "take_screenshot", "open_url", "focus_app", "keypress", "click"],
+  full: ["get_system_info", "take_screenshot", "open_url", "focus_app", "keypress", "click", "ax_describe_ui", "ax_click_element"],
 };
 
 module.exports = { tools, categories, securityPresets };

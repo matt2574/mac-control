@@ -217,6 +217,64 @@ Quartz.CGEventPost(Quartz.kCGHIDEventTap, event)
   }
 }
 
+// Use the project venv Python for PyObjC
+const AX_PYTHON = path.join(__dirname, "..", ".venv", "bin", "python3");
+
+function axDescribeUi(params) {
+  const app = params.app;
+  if (!app) return { success: false, error: "app parameter is required" };
+
+  const depth = params.depth || 6;
+  const scriptPath = path.join(__dirname, "ax", "describe.py");
+
+  try {
+    const args = [scriptPath, app, String(depth)];
+
+    const output = execSync(`${AX_PYTHON} ${args.map(a => `"${a}"`).join(" ")}`, {
+      encoding: "utf8",
+      timeout: 15000,
+    });
+    return { success: true, result: JSON.parse(output) };
+  } catch (err) {
+    return { success: false, error: `ax_describe_ui failed: ${err.message}` };
+  }
+}
+
+function axClickElement(params) {
+  const app = params.app;
+  if (!app) return { success: false, error: "app parameter is required" };
+  if (!params.role && !params.title && !params.description) {
+    return { success: false, error: "Specify at least role, title, or description" };
+  }
+
+  const scriptPath = path.join(__dirname, "ax", "click.py");
+
+  try {
+    const query = JSON.stringify({
+      app,
+      ...(params.role ? { role: params.role } : {}),
+      ...(params.title ? { titleContains: params.title } : {}),
+      ...(params.description ? { descriptionContains: params.description } : {}),
+      ...(params.index !== undefined ? { index: params.index } : {}),
+      ...(params.dryRun ? { dryRun: true } : {}),
+    });
+
+    const output = execSync(`${AX_PYTHON} "${scriptPath}" '${query.replace(/'/g, "'\''")}'`, {
+      encoding: "utf8",
+      timeout: 15000,
+    });
+    return { success: true, result: JSON.parse(output) };
+  } catch (err) {
+    const stderr = err.stderr ? err.stderr.toString() : "";
+    try {
+      const errJson = JSON.parse(err.stdout || "");
+      return { success: false, ...errJson };
+    } catch {
+      return { success: false, error: `ax_click_element failed: ${err.message} ${stderr}` };
+    }
+  }
+}
+
 const executors = {
   get_system_info: getSystemInfo,
   take_screenshot: takeScreenshot,
@@ -224,6 +282,8 @@ const executors = {
   focus_app: focusApp,
   keypress: keypress,
   click: click,
+  ax_describe_ui: axDescribeUi,
+  ax_click_element: axClickElement,
 };
 
 module.exports = { executors };
